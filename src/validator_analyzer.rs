@@ -395,9 +395,16 @@ impl ValidatorAnalyzer {
             });
         }
 
-        let total_time = packets.last().unwrap().timestamp - first_timestamp;
-        let avg_interval = if packets.len() > 1 {
-            total_time / (packets.len() - 1) as f64
+        let avg_interval = if let (Some(first), Some(last)) =
+            (packets.first(), packets.last())
+        {
+            let count = packets.len();
+            if count > 1 {
+                let total_time = last.timestamp - first.timestamp;
+                total_time / (count as f64 - 1.0)
+            } else {
+                0.0
+            }
         } else {
             0.0
         };

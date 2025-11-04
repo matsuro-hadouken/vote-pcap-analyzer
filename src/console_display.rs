@@ -267,11 +267,13 @@ impl ConsoleDisplay {
         non_repair_records_timing.sort_by(|a, b| a.timestamp.partial_cmp(&b.timestamp).unwrap());
 
         // Calculate total duration excluding repair packets - from first to last non-repair packet
-        let transaction_total_duration = if non_repair_records_timing.len() > 1 {
-            let first_time = non_repair_records_timing.first().unwrap().timestamp;
-            let last_time = non_repair_records_timing.last().unwrap().timestamp;
-            last_time - first_time
-        } else { 0.0 };
+        let transaction_total_duration = if let (Some(first), Some(last)) =
+            (non_repair_records_timing.first(), non_repair_records_timing.last())
+        {
+            last.timestamp - first.timestamp
+        } else {
+            0.0
+        };
 
         // Calculate overall duration including all packets
         let overall_duration = if let (Some(first), Some(last)) = (analysis.timing_records.first(), analysis.timing_records.last()) {
@@ -279,11 +281,17 @@ impl ConsoleDisplay {
         } else { 0.0 };
 
         // Calculate non-repair average interval
-        let non_repair_avg_interval = if non_repair_records_timing.len() > 1 {
-            let first_time = non_repair_records_timing.first().unwrap().timestamp;
-            let last_time = non_repair_records_timing.last().unwrap().timestamp;
-            (last_time - first_time) / (non_repair_records_timing.len() - 1) as f64
-        } else { 0.0 };
+        let non_repair_avg_interval = if let (Some(first), Some(last)) =
+            (non_repair_records_timing.first(), non_repair_records_timing.last())
+        {
+            if non_repair_records_timing.len() > 1 {
+                (last.timestamp - first.timestamp) / (non_repair_records_timing.len() as f64 - 1.0)
+            } else {
+                0.0
+            }
+        } else {
+            0.0
+        };
 
         println!("  Avg Interval (excl repair): {} seconds", format!("{:.6}", non_repair_avg_interval).green());
         println!("  Avg Duplicate Interval: {} seconds", format!("{:.6}", avg_duplicate_interval).cyan());
